@@ -21,7 +21,7 @@ exports.getHospitals = async (req, res, next) => {
     /\b(gt|gte|lt|lte|in)\b/g,
     (match) => `$${match}`
   );
-  query = Hospital.find(JSON.parse(queryStr));
+  query = Hospital.find(JSON.parse(queryStr)).populate("appointments");
 
   if (req.query.select) {
     const fields = req.query.select.split(",").join(" ");
@@ -49,7 +49,6 @@ exports.getHospitals = async (req, res, next) => {
     // Pagination result
     const pagination = {};
 
-    console.log(`endIndex: ${endIndex}, total: ${total}`);
     if (endIndex < total) {
       pagination.next = {
         page: page + 1,
@@ -70,6 +69,7 @@ exports.getHospitals = async (req, res, next) => {
       data: hospitals,
     });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ success: false });
   }
 };
@@ -120,10 +120,15 @@ exports.updateHospital = async (req, res, next) => {
 // @access Private
 exports.deleteHospital = async (req, res, next) => {
   try {
-    const hospital = await Hospital.findByIdAndDelete(req.params.id);
+    const hospital = await Hospital.findById(req.params.id);
 
-    if (!hospital) return res.status(400).json({ success: false });
+    if (!hospital)
+      return res.status(400).json({
+        success: false,
+        message: `Hospital ${req.params.id} not found`,
+      });
 
+    hospital.remove();
     res.status(200).json({ success: true, data: {} });
   } catch (err) {
     res.status(500).json({ success: false });

@@ -23,6 +23,7 @@ exports.getAppointments = async (req, res, next) => {
 
   try {
     const appointments = await query;
+    console.log(appointments);
 
     res.status(200).json({
       success: true,
