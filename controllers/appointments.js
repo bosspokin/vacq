@@ -72,6 +72,21 @@ exports.getAppointment = async (req, res, next) => {
 // @access Private
 exports.addAppointment = async (req, res, next) => {
   try {
+    console.log(typeof req.user.id);
+    // add user Id to req.body
+    req.body.user = req.user.id;
+
+    // Check for existing appointments
+    const existingAppointments = await Appointment.find({
+      user: req.user.id,
+    });
+
+    // Only admin can create more than 3 appointments
+    if (existingAppointments.length >= 3 && req.user.role != "admin")
+      return res.status(400).json({
+        success: false,
+        message: `The user with ID ${req.user.id} has already made 3 appointments`,
+      });
     req.body.hospital = req.params.hospitalId;
 
     const hospital = await Hospital.findById(req.params.hospitalId);
@@ -111,6 +126,17 @@ exports.updateAppointment = async (req, res, next) => {
       });
     }
 
+    // Make sure the user is the appointment owner
+    if (
+      appointment.user.toString() !== req.user.id &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: `User ${req.user.id} is not authorized to update this appointment`,
+      });
+    }
+
     appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -136,6 +162,17 @@ exports.deleteAppointment = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: `No appointment with the id of ${req.params.id}`,
+      });
+    }
+
+    // Make sure the user is the appointment owner
+    if (
+      appointment.user.toString() !== req.user.id &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: `User ${req.user.id} is not authorized to update this appointment`,
       });
     }
 
