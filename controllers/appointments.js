@@ -172,7 +172,7 @@ exports.deleteAppointment = async (req, res, next) => {
     ) {
       return res.status(401).json({
         success: false,
-        message: `User ${req.user.id} is not authorized to update this appointment`,
+        message: `User ${req.user.id} is not authorized to delete this appointment`,
       });
     }
 
